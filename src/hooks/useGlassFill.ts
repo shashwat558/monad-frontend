@@ -1,0 +1,121 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useCallback, useMemo } from "react";
+import { useAccount } from "wagmi";
+import { useReadContract } from "wagmi";
+import { useWriteContract } from "wagmi";
+import { useWaitForTransactionReceipt } from "wagmi";
+import { GLASSFILL_ADDRESS, glassFillAbi } from "./abi";
+import { parseEther } from "viem";
+import toast from "react-hot-toast";
+
+
+export function useGlassFill(gameId?: bigint) {
+  const { address } = useAccount();
+
+  const gameQuery = useReadContract({
+    address: GLASSFILL_ADDRESS as `0x${string}`,
+    abi: glassFillAbi,
+    functionName: "getGame",
+    args: gameId !== undefined ? [gameId] : undefined,
+    query: { enabled: gameId !== undefined },
+  });
+
+  const { writeContractAsync, data: hash } = useWriteContract();
+  const tx = useWaitForTransactionReceipt({ hash });
+
+  const createGame = useCallback(
+    async (opponent: `0x${string}`, isEthPlayer: boolean) => {
+      try {
+        const h = await writeContractAsync({
+          address: GLASSFILL_ADDRESS as `0x${string}`,
+          abi: glassFillAbi,
+          functionName: "createGame",
+          args: [opponent, isEthPlayer],
+        });
+        toast.loading("Creating game...", { id: h });
+        return h;
+      } catch (e: any) {
+        toast.error(e?.shortMessage || e?.message || "Create failed");
+        throw e;
+      }
+    },
+    [writeContractAsync]
+  );
+
+  const joinGame = useCallback(
+    async (id: bigint) => {
+      try {
+        const h = await writeContractAsync({
+          address: GLASSFILL_ADDRESS as `0x${string}`,
+          abi: glassFillAbi,
+          functionName: "joinGame",
+          args: [id],
+        });
+        toast.loading("Joining game...", { id: h });
+        return h;
+      } catch (e: any) {
+        toast.error(e?.shortMessage || e?.message || "Join failed");
+        throw e;
+      }
+    },
+    [writeContractAsync]
+  );
+
+  const playTurn = useCallback(
+    async (id: bigint, amountEth: string) => {
+      const value = parseEther(amountEth || "0");
+      try {
+        const h = await writeContractAsync({
+          address: GLASSFILL_ADDRESS as `0x${string}`,
+          abi: glassFillAbi,
+          functionName: "playTurn",
+          args: [id, value],
+          value,
+        });
+        toast.loading("Submitting turn...", { id: h });
+        return h;
+      } catch (e: any) {
+        toast.error(e?.shortMessage || e?.message || "Turn failed");
+        throw e;
+      }
+    },
+    [writeContractAsync]
+  );
+
+  const withdraw = useCallback(
+    async (id: bigint) => {
+      try {
+        const h = await writeContractAsync({
+          address: GLASSFILL_ADDRESS as `0x${string}`,
+          abi: glassFillAbi,
+          functionName: "withdraw",
+          args: [id],
+        });
+        toast.loading("Withdrawing...", { id: h });
+        return h;
+      } catch (e: any) {
+        toast.error(e?.shortMessage || e?.message || "Withdraw failed");
+        throw e;
+      }
+    },
+    [writeContractAsync]
+  );
+
+  const state = useMemo(() => ({
+    address,
+    game: gameQuery.data as any,
+    refetch: gameQuery.refetch,
+    isLoading: gameQuery.isLoading,
+  }), [address, gameQuery.data, gameQuery.refetch, gameQuery.isLoading]);
+
+  return {
+    ...state,
+    createGame,
+    joinGame,
+    playTurn,
+    withdraw,
+    tx,
+  };
+}
