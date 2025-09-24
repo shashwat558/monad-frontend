@@ -19,6 +19,6 @@ export const glassFillAbi = [
   { type: "event", name: "Withdrawal", inputs: [{ name: "player", type: "address", indexed: true },{ name: "amount", type: "uint256", indexed: false }], anonymous: false },
 ];
 
-export const GLASSFILL_ADDRESS: `0x${string}` = "0x0000000000000000000000000000000000000000";
+export const GLASSFILL_ADDRESS: `0x${string}` = "0x7EfBF7E0291E359Fa778eC9143b98c2aD241e49A";
 
 

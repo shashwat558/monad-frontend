@@ -95,6 +95,11 @@ export const glassFillAbi = [
   },
 ];
 
-export const GLASSFILL_ADDRESS = "0x0000000000000000000000000000000000000000"; // TODO: replace
+// Deployed addresses per chainId
+// 11155111 = Sepolia, 10143 = Monad Testnet
+export const GLASSFILL_ADDRESSES: Record<number, `0x${string}`> = {
+  11155111: "0x7EfBF7E0291E359Fa778eC9143b98c2aD241e49A", // TODO: set Sepolia address
+  10143: "0x7EfBF7E0291E359Fa778eC9143b98c2aD241e49A", // TODO: set Monad Testnet address
+};
 
 

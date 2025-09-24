@@ -2,20 +2,22 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { useReadContract } from "wagmi";
 import { useWriteContract } from "wagmi";
 import { useWaitForTransactionReceipt } from "wagmi";
-import { GLASSFILL_ADDRESS, glassFillAbi } from "./abi";
+import { GLASSFILL_ADDRESSES, glassFillAbi } from "./abi";
 import { parseEther } from "viem";
 import toast from "react-hot-toast";
 
 
 export function useGlassFill(gameId?: bigint) {
   const { address } = useAccount();
+  const chainId = useChainId();
+  const contractAddress = GLASSFILL_ADDRESSES[chainId];
 
   const gameQuery = useReadContract({
-    address: GLASSFILL_ADDRESS as `0x${string}`,
+    address: contractAddress as `0x${string}`,
     abi: glassFillAbi,
     functionName: "getGame",
     args: gameId !== undefined ? [gameId] : undefined,
@@ -29,7 +31,7 @@ export function useGlassFill(gameId?: bigint) {
     async (opponent: `0x${string}`, isEthPlayer: boolean) => {
       try {
         const h = await writeContractAsync({
-          address: GLASSFILL_ADDRESS as `0x${string}`,
+          address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
           functionName: "createGame",
           args: [opponent, isEthPlayer],
@@ -48,7 +50,7 @@ export function useGlassFill(gameId?: bigint) {
     async (id: bigint) => {
       try {
         const h = await writeContractAsync({
-          address: GLASSFILL_ADDRESS as `0x${string}`,
+          address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
           functionName: "joinGame",
           args: [id],
@@ -68,7 +70,7 @@ export function useGlassFill(gameId?: bigint) {
       const value = parseEther(amountEth || "0");
       try {
         const h = await writeContractAsync({
-          address: GLASSFILL_ADDRESS as `0x${string}`,
+          address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
           functionName: "playTurn",
           args: [id, value],
@@ -88,7 +90,7 @@ export function useGlassFill(gameId?: bigint) {
     async (id: bigint) => {
       try {
         const h = await writeContractAsync({
-          address: GLASSFILL_ADDRESS as `0x${string}`,
+          address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
           functionName: "withdraw",
           args: [id],

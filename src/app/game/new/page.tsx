@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useGlassFill } from "../../../hooks/useGlassFill";
 import { usePublicClient } from "wagmi";
 import { decodeEventLog, Hex, parseAbiItem } from "viem";
-import { glassFillAbi, GLASSFILL_ADDRESS } from "../../../hooks/abi";
+import { glassFillAbi, GLASSFILL_ADDRESSES } from "../../../hooks/abi";
 import { useRouter } from "next/navigation";
 import { useSwitchChain } from "wagmi";
 import { sepolia, monadTestnet } from "wagmi/chains";
@@ -15,10 +15,16 @@ export default function NewGamePage() {
   const role = params.get("role") || "eth";
   const [opponent, setOpponent] = useState("");
   const { createGame } = useGlassFill();
-  const client = usePublicClient();
   const router = useRouter();
   const { switchChainAsync } = useSwitchChain();
   const [error, setError] = useState<string | null>(null);
+  // Resolve target chain/address by role (ETH => Sepolia, MON => Monad Testnet)
+  const targetChainId = role === "eth" ? sepolia.id : monadTestnet.id;
+  const targetAddress = GLASSFILL_ADDRESSES[targetChainId];
+  const client = usePublicClient({ chainId: targetChainId });
+  console.log("Using contract", targetAddress, "on chain", targetChainId);
+
+
 
   return (
     <div className="glass-card p-6 space-y-4">
@@ -35,37 +41,16 @@ export default function NewGamePage() {
           try {
             if (!opponent || !opponent.startsWith("0x") || opponent.length !== 42) return;
             // Ensure correct network based on role
-            await switchChainAsync({ chainId: role === "eth" ? sepolia.id : monadTestnet.id });
+            await switchChainAsync({ chainId: targetChainId });
             const hash = await createGame(opponent as `0x${string}`, role === "eth");
-            if (!client) return;
+            if (!client || !targetAddress) {
+              setError("Missing client or contract address for target chain.");
+              return;
+            }
             const receipt = await client.waitForTransactionReceipt({ hash: hash as Hex });
-            // Robustly fetch GameCreated from chain logs on that block
-            const logs = await client.getLogs({
-              address: GLASSFILL_ADDRESS,
-              fromBlock: receipt.blockNumber,
-              toBlock: receipt.blockNumber,
-            });
-            for (const log of logs) {
-              try {
-                const ev = decodeEventLog({
-                  abi: [
-                    parseAbiItem(
-                      "event GameCreated(uint256 gameId, address creator, address opponent, bool isEthPlayer)"
-                    ),
-                  ],
-                  data: log.data,
-                  topics: log.topics,
-                });
-                if (ev.eventName === "GameCreated") {
-                  const gameId = ev.args.gameId as bigint;
-                  router.push(`/game/${gameId.toString()}`);
-                  setError(null);
-                  return;
-                }
-              } catch {}
-            }
-            // Fallback: try inline decode of all receipt logs with typed item
+            // 1) Decode only logs from our contract in this receipt
             for (const log of receipt.logs) {
+              if (String(log.address).toLowerCase() !== String(targetAddress).toLowerCase()) continue;
               try {
                 const ev = decodeEventLog({
                   abi: [
@@ -84,6 +69,30 @@ export default function NewGamePage() {
                 }
               } catch {}
             }
+
+            // 2) Fallback: scan a short window of logs for our contract
+            const fromBlock = receipt.blockNumber > 64n ? (receipt.blockNumber - 64n) : receipt.blockNumber;
+            const logs = await client.getLogs({ address: targetAddress as `0x${string}`, fromBlock, toBlock: receipt.blockNumber });
+            for (const log of logs.reverse()) {
+              try {
+                const ev = decodeEventLog({
+                  abi: [
+                    parseAbiItem(
+                      "event GameCreated(uint256 gameId, address creator, address opponent, bool isEthPlayer)"
+                    ),
+                  ],
+                  data: log.data,
+                  topics: log.topics,
+                });
+                if (ev.eventName === "GameCreated") {
+                  const gameId = ev.args.gameId as bigint;
+                  router.push(`/game/${gameId.toString()}`);
+                  setError(null);
+                  return;
+                }
+              } catch {}
+            }
+            setError("Game created but event not found. Check address/signature or refresh lobby.");
           } catch (e) {
             // swallow error to avoid hanging UI; user will see wallet error
             setError(e instanceof Error ? e.message : "Unknown error occurred");
