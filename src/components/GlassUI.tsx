@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface GlassUIProps {
   gameId?: bigint;
@@ -96,11 +96,11 @@ export default function GlassUI({ gameId = 1n }: GlassUIProps) {
       {/* Progress Info */}
       <div className="text-center space-y-2">
         <div className="text-2xl font-bold text-white">
-          {formatEther(currentAmount)} / {formatEther(limit)}
+          {formatEther(currentAmount)}
         </div>
-        <div className="text-sm text-white/60">
+        {/* <div className="text-sm text-white/60">
           {progress.toFixed(1)}% full
-        </div>
+        </div> */}
         {isFull && (
           <div className="text-red-400 font-semibold animate-pulse">
             ⚠️ GLASS OVERFLOW! ⚠️
@@ -170,7 +170,7 @@ export default function GlassUI({ gameId = 1n }: GlassUIProps) {
             Game Over!
           </div>
           <div className="text-white/70">
-            {winner === "You" ? "You won! Glass filled exactly." : "You lost! Glass overflowed."}
+            {winner === "You" ? "You won! Glass filled exactly.💦💦" : "You lost! Glass overflowed.💦💦"}
           </div>
           <div className="text-sm text-white/60">
             Total ETH: {formatEther(ethAmount)} | Total MON: {formatEther(monAmount)}

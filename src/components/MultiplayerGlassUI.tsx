@@ -138,7 +138,7 @@ export default function MultiplayerGlassUI({ gameId }: MultiplayerGlassUIProps) 
       {/* Progress Info */}
       <div className="text-center space-y-2">
         <div className="text-2xl font-bold text-white">
-          {formatEther(currentAmount)} / 1.0
+          {formatEther(currentAmount)} 
         </div>
         <div className="text-sm text-white/60">
           {progress.toFixed(1)}% full

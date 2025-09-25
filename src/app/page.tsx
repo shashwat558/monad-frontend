@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <div className="glass-card p-6">
-        <h1 className="text-2xl font-semibold">GlassFill Game</h1>
+        <h1 className="text-2xl font-semibold">Make Me Wet Game</h1>
         <p className="mt-2 text-white/70">Choose your game mode</p>
         
         <div className="flex gap-4 mt-4">

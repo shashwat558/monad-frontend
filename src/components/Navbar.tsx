@@ -9,7 +9,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-indigo-600" />
-          <span className="text-lg font-semibold">GlassFill</span>
+          <span className="text-lg font-semibold">Make Me Wet</span>
         </Link>
         <ConnectButton showBalance={false} chainStatus="none" />
       </div>

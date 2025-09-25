@@ -12,7 +12,8 @@ export const wagmiConfig = getDefaultConfig({
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "dev",
   chains: [sepolia, monadTestnet],
   transports: {
-    [sepolia.id]: http(),
+    // Use an explicit public RPC URL to avoid CORS or provider key issues in the browser
+    [sepolia.id]: http("https://rpc.ankr.com/eth_sepolia"),
     [monadTestnet.id]: http("https://testnet-rpc.monad.xyz"),
   },
   ssr: true,

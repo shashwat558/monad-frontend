@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { useReadContract } from "wagmi";
 import { useWriteContract } from "wagmi";
@@ -15,6 +15,7 @@ export function useGlassFill(gameId?: bigint) {
   const { address } = useAccount();
   const chainId = useChainId();
   const contractAddress = GLASSFILL_ADDRESSES[chainId];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const gameQuery = useReadContract({
     address: contractAddress as `0x${string}`,
@@ -30,6 +31,10 @@ export function useGlassFill(gameId?: bigint) {
   const createGame = useCallback(
     async (opponent: `0x${string}`, isEthPlayer: boolean) => {
       try {
+        if (!contractAddress) {
+          toast.error("Contract address not configured for this network");
+          throw new Error("Missing contract address for chain " + chainId);
+        }
         const h = await writeContractAsync({
           address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
@@ -43,12 +48,16 @@ export function useGlassFill(gameId?: bigint) {
         throw e;
       }
     },
-    [writeContractAsync]
+    [writeContractAsync, contractAddress, chainId]
   );
 
   const joinGame = useCallback(
     async (id: bigint) => {
       try {
+        if (!contractAddress) {
+          toast.error("Contract address not configured for this network");
+          throw new Error("Missing contract address for chain " + chainId);
+        }
         const h = await writeContractAsync({
           address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
@@ -62,13 +71,18 @@ export function useGlassFill(gameId?: bigint) {
         throw e;
       }
     },
-    [writeContractAsync]
+    [writeContractAsync, contractAddress, chainId]
   );
 
   const playTurn = useCallback(
     async (id: bigint, amountEth: string) => {
       const value = parseEther(amountEth || "0");
       try {
+        if (!contractAddress) {
+          toast.error("Contract address not configured for this network");
+          throw new Error("Missing contract address for chain " + chainId);
+        }
+        setIsSubmitting(true);
         const h = await writeContractAsync({
           address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
@@ -81,14 +95,20 @@ export function useGlassFill(gameId?: bigint) {
       } catch (e: any) {
         toast.error(e?.shortMessage || e?.message || "Turn failed");
         throw e;
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [writeContractAsync]
+    [writeContractAsync, contractAddress, chainId]
   );
 
   const withdraw = useCallback(
     async (id: bigint) => {
       try {
+        if (!contractAddress) {
+          toast.error("Contract address not configured for this network");
+          throw new Error("Missing contract address for chain " + chainId);
+        }
         const h = await writeContractAsync({
           address: contractAddress as `0x${string}`,
           abi: glassFillAbi,
@@ -102,7 +122,7 @@ export function useGlassFill(gameId?: bigint) {
         throw e;
       }
     },
-    [writeContractAsync]
+    [writeContractAsync, contractAddress, chainId]
   );
 
   const state = useMemo(() => ({
@@ -119,5 +139,6 @@ export function useGlassFill(gameId?: bigint) {
     playTurn,
     withdraw,
     tx,
+    isSubmitting,
   };
 }

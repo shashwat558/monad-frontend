@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useGlassFill } from "../hooks/useGlassFill";
+import toast from "react-hot-toast";
 
 export default function GameBoard({ gameId }: { gameId: bigint }) {
-  const { game, isLoading, playTurn, withdraw } = useGlassFill(gameId);
+  const { game, isLoading, playTurn, withdraw, isSubmitting, tx } = useGlassFill(gameId);
   const [amount, setAmount] = useState("0.1");
 
   const progress = useMemo(() => {
@@ -58,14 +59,34 @@ export default function GameBoard({ gameId }: { gameId: bigint }) {
             <input className="input" value={amount} onChange={(e) => setAmount(e.target.value)} />
             <div className="mt-1 text-xs text-white/50">Prevent overflow: keep total ≤ limit</div>
           </div>
-          <button className="btn-primary" onClick={() => playTurn(gameId, amount)}>
+          <button
+            className="btn-primary"
+            disabled={isSubmitting}
+            onClick={async () => {
+              try {
+                const hash = await playTurn(gameId, amount);
+                toast.success("Transaction submitted: " + String(hash).slice(0, 10) + "...");
+              } catch (e) {
+                // error toasts handled in hook
+              }
+            }}
+          >
             Pour
           </button>
         </div>
       ) : (
         <div className="flex justify-between items-center">
           <div className="text-white/70">Game over.</div>
-          <button className="btn-primary" onClick={() => withdraw(gameId)}>
+          <button
+            className="btn-primary"
+            disabled={isSubmitting}
+            onClick={async () => {
+              try {
+                const hash = await withdraw(gameId);
+                toast.success("Withdraw submitted: " + String(hash).slice(0, 10) + "...");
+              } catch (e) {}
+            }}
+          >
             Withdraw ETH
           </button>
         </div>
